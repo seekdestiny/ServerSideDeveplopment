@@ -3,5 +3,5 @@
 ## cd node
 ## ./configure
 ## make
-## suod make install
+## sudo make install
 
