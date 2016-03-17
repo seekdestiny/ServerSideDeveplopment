@@ -17,13 +17,11 @@ var promotionSchema = new Schema({
     },
     label: {
         type: String,
-        required: true,
-        unique: true
+        required: false,
     },
     price: {
         type: Currency,
         required: true,
-        unique: true
     },
     description: {
         type: String,
