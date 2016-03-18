@@ -10,7 +10,9 @@ var Verify = require('./verify.js');
 
 dishRouter.route('/')
 .get(Verify.verifyOrdinaryUser, function (req, res, next) {
-    Dishes.find({}, function (err, dish) {
+    Dishes.find({})
+        .populate('comments.postedBy')
+        .exec(function (err, dish) {
         if (err) throw err;
         res.json(dish);
     });
@@ -38,7 +40,9 @@ dishRouter.route('/')
 
 dishRouter.route('/:dishId')
 .get(Verify.verifyOrdinaryUser, function (req, res, next) {
-    Dishes.findById(req.params.dishId, function (err, dish) {
+    Dishes.findById(req.params.dishId)
+        .populate('comments.postedBy')
+        .exec(function (err, dish) {
         if (err) throw err;
         res.json(dish);
     });
@@ -63,16 +67,21 @@ dishRouter.route('/:dishId')
 });
 
 dishRouter.route('/:dishId/comments')
-.get(Verify.verifyOrdinaryUser, function (req, res, next) {
-    Dishes.findById(req.params.dishId, function (err, dish) {
+.all(Verify.verifyOrdinaryUser)
+
+.get(function (req, res, next) {
+    Dishes.findById(req.params.dishId)
+        .populate('comments.postedBy')
+        .exec(function (err, dish) {
         if (err) throw err;
         res.json(dish.comments);
     });
 })
 
-.post(Verify.verifyAdmin, function (req, res, next) {
+.post(function (req, res, next) {
     Dishes.findById(req.params.dishId, function (err, dish) {
         if (err) throw err;
+        req.body.postedBy = req.decoded._doc._id;
         dish.comments.push(req.body);
         dish.save(function (err, dish) {
             if (err) throw err;
@@ -99,19 +108,23 @@ dishRouter.route('/:dishId/comments')
 });
 
 dishRouter.route('/:dishId/comments/:commentId')
-.get(Verify.verifyOrdinaryUser, function (req, res, next) {
-    Dishes.findById(req.params.dishId, function (err, dish) {
+.all(Verify.verifyOrdinaryUser)
+.get(function (req, res, next) {
+    Dishes.findById(req.params.dishId)
+        .populate('comments.postedBy')
+        .exec(function (err, dish) {
         if (err) throw err;
         res.json(dish.comments.id(req.params.commentId));
     });
 })
 
-.put(Verify.verifyAdmin, function (req, res, next) {
+.put(function (req, res, next) {
     // We delete the existing commment and insert the updated
     // comment as a new comment
     Dishes.findById(req.params.dishId, function (err, dish) {
         if (err) throw err;
         dish.comments.id(req.params.commentId).remove();
+        req.body.postedBy = req.decoded._doc._id;
         dish.comments.push(req.body);
         dish.save(function (err, dish) {
             if (err) throw err;
@@ -121,8 +134,14 @@ dishRouter.route('/:dishId/comments/:commentId')
     });
 })
 
-.delete(Verify.verifyAdmin, function (req, res, next) {
+.delete(function (req, res, next) {
     Dishes.findById(req.params.dishId, function (err, dish) {
+        if (dish.comments.id(req.params.commentId).postedBy
+           != req.decoded._doc._id) {
+            var err = new Error('You are not authorized to perform this operation!');
+            err.status = 403;
+            return next(err);
+        }
         dish.comments.id(req.params.commentId).remove();
         dish.save(function (err, resp) {
             if (err) throw err;
