@@ -18,6 +18,7 @@ var promotionSchema = new Schema({
     label: {
         type: String,
         required: false,
+        default: ""
     },
     price: {
         type: Currency,
