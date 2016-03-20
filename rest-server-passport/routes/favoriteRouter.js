@@ -37,14 +37,7 @@ favoriteRouter.route('/')
                  });
              });   
         } else {
-            var exist = false;
-            for (var i = (favorite.dishes.length -1); i >= 0; i--) {
-                if (favorite.dishes[i] == req.body._id) {
-                    exist = true;
-                }
-            }
-
-            if (!exist) {
+            if (favorite.dishes.indexOf(req.body._id) == -1) {
                 favorite.dishes.push(req.body._id);
                 favorite.save(function (err, favorite) {
                     if (err) throw err;
@@ -90,15 +83,15 @@ favoriteRouter.route('/:dishId')
         if (!favorite) {
             return res.status(404).json({status: 'No Dish Added!'});
         } else {
-            for (var i = (favorite.dishes.length -1); i >= 0; i--) {
-                if (favorite.dishes[i] == req.params.dishId) {
-                    favorite.dishes.splice(i, i + 1);
-                }
+            var i = favorite.dishes.indexOf(req.params.dishId);
+
+            if (i != -1) {
+                favorite.dishes.splice(i, i + 1);
             }
 
             favorite.save(function (err, favrotie) {
                 if (err) throw err;
-                console.log('Delete ALL Favorite Dishes!');
+                console.log('Delete Dish!');
                 res.json(favorite);
             });
         }
